@@ -269,6 +269,16 @@
         document.getElementById('responseCount').textContent = responseCount;
         
         async function makeChoice(choice) {
+            // Vérifier le cooldown pour éviter le spam
+            const lastVote = localStorage.getItem('paulLiaLastVote');
+            const now = Date.now();
+            
+            if (lastVote && (now - parseInt(lastVote)) < COOLDOWN_TIME) {
+                const remaining = Math.ceil((COOLDOWN_TIME - (now - parseInt(lastVote))) / 1000);
+                document.getElementById('status').textContent = `Please wait ${remaining} seconds before voting again`;
+                return;
+            }
+            
             // Désactiver les boutons temporairement
             const buttons = document.querySelectorAll('.choice-button');
             buttons.forEach(btn => btn.style.pointerEvents = 'none');
@@ -304,11 +314,11 @@
             };
             
             try {
-                // TODO: Remplacer par ton endpoint Google Sheets
-                // await sendToGoogleSheets(data);
+                // Envoyer vers Google Sheets
+                await sendToGoogleSheets(data);
                 
-                // Simulation pour le développement
-                console.log('Données enregistrées:', data);
+                // Marquer le timestamp du dernier vote
+                localStorage.setItem('paulLiaLastVote', Date.now().toString());
                 
                 // Incrémenter le compteur
                 responseCount++;
@@ -356,24 +366,23 @@
             return sessionId;
         }
         
-        // Fonction pour envoyer vers Google Sheets (à implémenter)
+        // Configuration
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsZdfaQ4kiHQU66QE1j5ekEMIufwq-3vPqIxIahIKu6DMI3NglqeUqbuoDQXzh0309/exec';
+        const COOLDOWN_TIME = 30000; // 30 secondes entre chaque vote
+        
+        // Fonction pour envoyer vers Google Sheets
         async function sendToGoogleSheets(data) {
-            // Cette fonction sera implémentée une fois que tu auras configuré
-            // ton Google Apps Script ou ton API endpoint
-            
-            const response = await fetch('TON_ENDPOINT_GOOGLE_SHEETS', {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                mode: 'no-cors' // Important pour Google Apps Script
             });
             
-            if (!response.ok) {
-                throw new Error('Erreur réseau');
-            }
-            
-            return response.json();
+            // Avec no-cors, on ne peut pas lire la réponse, on assume que c'est OK
+            return { status: 'success' };
         }
         
         // Prévenir la sélection de texte et les clics droits pour l'installation
