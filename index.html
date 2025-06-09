@@ -77,8 +77,8 @@
         }
         
         .paul-lia-avatar {
-            width: 200px;
-            height: 200px;
+            width: 300px;
+            height: 300px;
             margin: 0 auto 30px;
             display: flex;
             align-items: center;
@@ -90,8 +90,8 @@
         .paul-lia-face {
             position: relative;
             z-index: 1;
-            width: 200px;
-            height: 200px;
+            width: 300px;
+            height: 300px;
             background-image: url('https://i.ibb.co/6cV9XTRt/Plan-de-travail-252.png');
             background-size: contain;
             background-position: center;
@@ -329,6 +329,24 @@
                 isVoting = false;
                 enableButtons();
             }
+        }
+        
+        function showThankYou() {
+            const thankYou = document.getElementById('thankYou');
+            thankYou.innerHTML = `
+                <h2>Data recorded</h2>
+                <p>Thank you for helping Paul Lia</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #888;">
+                    Your choice has been added to the collective memory.<br>
+                    You can now close this page.
+                </p>
+            `;
+            thankYou.classList.add('show');
+            
+            // Garder le message affiché plus longtemps
+            setTimeout(() => {
+                thankYou.classList.remove('show');
+            }, 5000);
         }
         
         function disableButtons() {
