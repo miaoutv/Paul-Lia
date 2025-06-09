@@ -213,6 +213,16 @@
             .buttons-container {
                 gap: 20px;
             }
+            
+            .paul-lia-avatar {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .paul-lia-face {
+                width: 250px;
+                height: 250px;
+            }
         }
     </style>
 </head>
@@ -249,8 +259,75 @@
     </div>
 
     <script>
+        // Configuration
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwI5odf5dbEer2G4k67n-NQ4WZrYG_WcxL9hUtvMPiRYoHO3PVXsVodS9IFjmsfNr99/exec';
+        
+        let isVoting = false; // Flag pour éviter les clics pendant l'envoi
+        let clickCount = 0; // Pour le reset secret
         let responseCount = parseInt(localStorage.getItem('paulLiaResponses') || '0');
         document.getElementById('responseCount').textContent = responseCount;
+        
+        // Fonctions pour gérer les cookies
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+        }
+        
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+        
+        function hasUserVoted() {
+            // Vérifier à la fois localStorage et cookies pour plus de robustesse
+            return localStorage.getItem('paulLiaHasVoted') === 'true' || 
+                   getCookie('paulLiaVoted') === 'true';
+        }
+        
+        function markUserAsVoted() {
+            localStorage.setItem('paulLiaHasVoted', 'true');
+            setCookie('paulLiaVoted', 'true', 365); // Cookie valide 1 an
+            localStorage.setItem('paulLiaLastVote', Date.now().toString());
+        }
+        
+        function resetVoting() {
+            localStorage.removeItem('paulLiaHasVoted');
+            localStorage.removeItem('paulLiaLastVote');
+            localStorage.removeItem('paulLiaResponses');
+            setCookie('paulLiaVoted', '', -1); // Supprimer le cookie
+            location.reload(); // Refresh la page
+        }
+        
+        // Fonction pour envoyer vers Google Sheets
+        async function sendToGoogleSheets(data) {
+            console.log('Envoi des données:', data);
+            
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                    mode: 'no-cors' // Important pour Google Apps Script
+                });
+                
+                console.log('Réponse envoyée (no-cors mode)');
+                // Avec no-cors, on ne peut pas lire la réponse, on assume que c'est OK
+                return { status: 'success' };
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi:', error);
+                throw error;
+            }
+        }
         
         async function makeChoice(choice) {
             // Vérifier si l'utilisateur a déjà voté (cookies + localStorage)
@@ -367,6 +444,15 @@
             });
         }
         
+        function getSessionId() {
+            let sessionId = localStorage.getItem('paulLiaSessionId');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('paulLiaSessionId', sessionId);
+            }
+            return sessionId;
+        }
+        
         // Reset secret : cliquer 5 fois rapidement sur Paul Lia
         document.querySelector('.paul-lia-avatar').addEventListener('click', function() {
             clickCount++;
@@ -399,97 +485,6 @@
                 }, 1000);
             }
         });
-            const thankYou = document.getElementById('thankYou');
-            thankYou.innerHTML = `
-                <h2>Data recorded</h2>
-                <p>Thank you for helping Paul Lia</p>
-                <p style="margin-top: 10px; font-size: 14px; color: #888;">
-                    Your choice has been added to the collective memory.<br>
-                    You can now close this page.
-                </p>
-            `;
-            thankYou.classList.add('show');
-            
-            // Garder le message affiché plus longtemps
-            setTimeout(() => {
-                thankYou.classList.remove('show');
-            }, 5000);
-        }
-        
-        function getSessionId() {
-            let sessionId = localStorage.getItem('paulLiaSessionId');
-            if (!sessionId) {
-                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('paulLiaSessionId', sessionId);
-            }
-            return sessionId;
-        }
-        
-        // Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwI5odf5dbEer2G4k67n-NQ4WZrYG_WcxL9hUtvMPiRYoHO3PVXsVodS9IFjmsfNr99/exec';
-        
-        let isVoting = false; // Flag pour éviter les clics pendant l'envoi
-        let clickCount = 0; // Pour le reset secret
-        
-        // Fonctions pour gérer les cookies
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-        }
-        
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-        
-        function hasUserVoted() {
-            // Vérifier à la fois localStorage et cookies pour plus de robustesse
-            return localStorage.getItem('paulLiaHasVoted') === 'true' || 
-                   getCookie('paulLiaVoted') === 'true';
-        }
-        
-        function markUserAsVoted() {
-            localStorage.setItem('paulLiaHasVoted', 'true');
-            setCookie('paulLiaVoted', 'true', 365); // Cookie valide 1 an
-            localStorage.setItem('paulLiaLastVote', Date.now().toString());
-        }
-        
-        function resetVoting() {
-            localStorage.removeItem('paulLiaHasVoted');
-            localStorage.removeItem('paulLiaLastVote');
-            localStorage.removeItem('paulLiaResponses');
-            setCookie('paulLiaVoted', '', -1); // Supprimer le cookie
-            location.reload(); // Refresh la page
-        }
-        async function sendToGoogleSheets(data) {
-            console.log('Envoi des données:', data);
-            
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                    mode: 'no-cors' // Important pour Google Apps Script
-                });
-                
-                console.log('Réponse envoyée (no-cors mode)');
-                // Avec no-cors, on ne peut pas lire la réponse, on assume que c'est OK
-                return { status: 'success' };
-                
-            } catch (error) {
-                console.error('Erreur lors de l\'envoi:', error);
-                throw error;
-            }
-        }
         
         // Prévenir la sélection de texte et les clics droits pour l'installation
         document.addEventListener('selectstart', e => e.preventDefault());
