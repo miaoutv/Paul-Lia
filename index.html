@@ -79,40 +79,24 @@
         .paul-lia-avatar {
             width: 200px;
             height: 200px;
-            border: 3px solid #00ff41;
-            border-radius: 50%;
             margin: 0 auto 30px;
-            background: radial-gradient(circle, #001a00, #000);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
-            font-weight: 900;
-            text-shadow: 0 0 20px #00ff41;
-            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
             position: relative;
-            overflow: hidden;
-        }
-        
-        .paul-lia-avatar::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(0, 255, 65, 0.1), transparent);
-            animation: rotate 4s linear infinite;
-        }
-        
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            cursor: pointer;
         }
         
         .paul-lia-face {
             position: relative;
             z-index: 1;
+            width: 200px;
+            height: 200px;
+            background-image: url('https://i.ibb.co/6cV9XTRt/Plan-de-travail-252.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 65, 0.6));
         }
         
         h1 {
@@ -238,7 +222,7 @@
     
     <div class="container">
         <div class="paul-lia-avatar">
-            <div class="paul-lia-face">P.L</div>
+            <div class="paul-lia-face"></div>
         </div>
         
         <h1>PAUL LIA</h1>
@@ -269,19 +253,24 @@
         document.getElementById('responseCount').textContent = responseCount;
         
         async function makeChoice(choice) {
-            // Vérifier le cooldown pour éviter le spam
-            const lastVote = localStorage.getItem('paulLiaLastVote');
-            const now = Date.now();
-            
-            if (lastVote && (now - parseInt(lastVote)) < COOLDOWN_TIME) {
-                const remaining = Math.ceil((COOLDOWN_TIME - (now - parseInt(lastVote))) / 1000);
-                document.getElementById('status').textContent = `Please wait ${remaining} seconds before voting again`;
+            // Vérifier si l'utilisateur a déjà voté (cookies + localStorage)
+            if (hasUserVoted()) {
+                document.getElementById('status').textContent = 'You have already participated. Thank you!';
+                disableButtons();
                 return;
             }
             
-            // Désactiver les boutons temporairement
-            const buttons = document.querySelectorAll('.choice-button');
-            buttons.forEach(btn => btn.style.pointerEvents = 'none');
+            // Bloquer si déjà en train de voter
+            if (isVoting) {
+                document.getElementById('status').textContent = 'Please wait, processing your previous choice...';
+                return;
+            }
+            
+            // Marquer comme en cours de traitement
+            isVoting = true;
+            
+            // Désactiver les boutons
+            disableButtons();
             
             const status = document.getElementById('status');
             status.textContent = 'Recording your choice...';
@@ -317,8 +306,8 @@
                 // Envoyer vers Google Sheets
                 await sendToGoogleSheets(data);
                 
-                // Marquer le timestamp du dernier vote
-                localStorage.setItem('paulLiaLastVote', Date.now().toString());
+                // Marquer l'utilisateur comme ayant voté (cookies + localStorage)
+                markUserAsVoted();
                 
                 // Incrémenter le compteur
                 responseCount++;
@@ -328,33 +317,85 @@
                 // Afficher le message de remerciement
                 showThankYou();
                 
-                status.textContent = 'Choice recorded successfully';
+                status.textContent = 'Choice recorded successfully. Thank you!';
                 
-                // Réactiver après 3 secondes
-                setTimeout(() => {
-                    buttons.forEach(btn => btn.style.pointerEvents = 'auto');
-                    status.textContent = 'Waiting for your choice...';
-                }, 3000);
+                // Les boutons restent désactivés définitivement
                 
             } catch (error) {
                 console.error('Erreur lors de l\'enregistrement:', error);
                 status.textContent = 'Error recording choice. Please try again.';
                 
-                // Réactiver en cas d'erreur
-                setTimeout(() => {
-                    buttons.forEach(btn => btn.style.pointerEvents = 'auto');
-                    status.textContent = 'Waiting for your choice...';
-                }, 2000);
+                // Réactiver seulement en cas d'erreur
+                isVoting = false;
+                enableButtons();
             }
         }
         
-        function showThankYou() {
+        function disableButtons() {
+            const buttons = document.querySelectorAll('.choice-button');
+            buttons.forEach(btn => {
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.3';
+                btn.style.cursor = 'not-allowed';
+            });
+        }
+        
+        function enableButtons() {
+            const buttons = document.querySelectorAll('.choice-button');
+            buttons.forEach(btn => {
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
+        }
+        
+        // Reset secret : cliquer 5 fois rapidement sur Paul Lia
+        document.querySelector('.paul-lia-avatar').addEventListener('click', function() {
+            clickCount++;
+            if (clickCount === 5) {
+                if (confirm('Reset voting data? (Admin only)')) {
+                    resetVoting();
+                }
+                clickCount = 0;
+            }
+            setTimeout(() => { clickCount = 0; }, 2000); // Reset après 2 secondes
+        });
+        
+        // Vérifier au chargement si l'utilisateur a déjà voté
+        window.addEventListener('load', function() {
+            if (hasUserVoted()) {
+                document.getElementById('status').textContent = 'You have already participated. Thank you!';
+                disableButtons();
+                
+                // Afficher un message spécial pour les utilisateurs qui ont déjà voté
+                setTimeout(() => {
+                    const thankYou = document.getElementById('thankYou');
+                    thankYou.innerHTML = `
+                        <h2>Already participated</h2>
+                        <p>You have already helped Paul Lia</p>
+                        <p style="margin-top: 10px; font-size: 14px; color: #888;">
+                            Thank you for your contribution!
+                        </p>
+                    `;
+                    thankYou.classList.add('show');
+                }, 1000);
+            }
+        });
             const thankYou = document.getElementById('thankYou');
+            thankYou.innerHTML = `
+                <h2>Data recorded</h2>
+                <p>Thank you for helping Paul Lia</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #888;">
+                    Your choice has been added to the collective memory.<br>
+                    You can now close this page.
+                </p>
+            `;
             thankYou.classList.add('show');
             
+            // Garder le message affiché plus longtemps
             setTimeout(() => {
                 thankYou.classList.remove('show');
-            }, 2000);
+            }, 5000);
         }
         
         function getSessionId() {
@@ -368,9 +409,47 @@
         
         // Configuration
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwI5odf5dbEer2G4k67n-NQ4WZrYG_WcxL9hUtvMPiRYoHO3PVXsVodS9IFjmsfNr99/exec';
-        const COOLDOWN_TIME = 30000; // 30 secondes entre chaque vote
         
-        // Fonction pour envoyer vers Google Sheets
+        let isVoting = false; // Flag pour éviter les clics pendant l'envoi
+        let clickCount = 0; // Pour le reset secret
+        
+        // Fonctions pour gérer les cookies
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+        }
+        
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+        
+        function hasUserVoted() {
+            // Vérifier à la fois localStorage et cookies pour plus de robustesse
+            return localStorage.getItem('paulLiaHasVoted') === 'true' || 
+                   getCookie('paulLiaVoted') === 'true';
+        }
+        
+        function markUserAsVoted() {
+            localStorage.setItem('paulLiaHasVoted', 'true');
+            setCookie('paulLiaVoted', 'true', 365); // Cookie valide 1 an
+            localStorage.setItem('paulLiaLastVote', Date.now().toString());
+        }
+        
+        function resetVoting() {
+            localStorage.removeItem('paulLiaHasVoted');
+            localStorage.removeItem('paulLiaLastVote');
+            localStorage.removeItem('paulLiaResponses');
+            setCookie('paulLiaVoted', '', -1); // Supprimer le cookie
+            location.reload(); // Refresh la page
+        }
         async function sendToGoogleSheets(data) {
             console.log('Envoi des données:', data);
             
