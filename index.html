@@ -372,17 +372,26 @@
         
         // Fonction pour envoyer vers Google Sheets
         async function sendToGoogleSheets(data) {
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                mode: 'no-cors' // Important pour Google Apps Script
-            });
+            console.log('Envoi des données:', data);
             
-            // Avec no-cors, on ne peut pas lire la réponse, on assume que c'est OK
-            return { status: 'success' };
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                    mode: 'no-cors' // Important pour Google Apps Script
+                });
+                
+                console.log('Réponse envoyée (no-cors mode)');
+                // Avec no-cors, on ne peut pas lire la réponse, on assume que c'est OK
+                return { status: 'success' };
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'envoi:', error);
+                throw error;
+            }
         }
         
         // Prévenir la sélection de texte et les clics droits pour l'installation
