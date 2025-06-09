@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paul Lia - Help me, save the world</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a2e, #16213e);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            color: #00ff41;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 65, 0.03) 2px,
+                rgba(0, 255, 65, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .glitch {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.02);
+            opacity: 0;
+            animation: glitchEffect 3s infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        @keyframes glitchEffect {
+            0%, 90%, 100% { opacity: 0; }
+            93%, 97% { opacity: 1; }
+        }
+        
+        .container {
+            text-align: center;
+            z-index: 3;
+            max-width: 90vw;
+            padding: 20px;
+        }
+        
+        .paul-lia-avatar {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #00ff41;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            background: radial-gradient(circle, #001a00, #000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 900;
+            text-shadow: 0 0 20px #00ff41;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .paul-lia-avatar::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            animation: rotate 4s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .paul-lia-face {
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: clamp(24px, 5vw, 48px);
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #00ff41;
+            letter-spacing: 2px;
+        }
+        
+        .quest-text {
+            font-size: clamp(18px, 3vw, 32px);
+            margin-bottom: 40px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+        }
+        
+        .buttons-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .choice-button {
+            width: 120px;
+            height: 120px;
+            border: 3px solid #00ff41;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff41;
+            font-family: 'Orbitron', monospace;
+            font-size: 48px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 0 0 10px #00ff41;
+            border-radius: 10px;
+        }
+        
+        .choice-button:hover {
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.6);
+            transform: scale(1.05);
+        }
+        
+        .choice-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.8);
+        }
+        
+        .choice-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .choice-button:hover::before {
+            left: 100%;
+        }
+        
+        .status {
+            font-size: 16px;
+            color: #888;
+            min-height: 20px;
+            margin-top: 20px;
+        }
+        
+        .thank-you {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #00ff41;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .thank-you.show {
+            opacity: 1;
+        }
+        
+        .data-counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff41;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #00ff41;
+        }
+
+        @media (max-width: 768px) {
+            .choice-button {
+                width: 100px;
+                height: 100px;
+                font-size: 36px;
+            }
+            
+            .buttons-container {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    <div class="glitch"></div>
+    
+    <div class="container">
+        <div class="paul-lia-avatar">
+            <div class="paul-lia-face">P.L</div>
+        </div>
+        
+        <h1>PAUL LIA</h1>
+        <div class="quest-text">Help me, save the world</div>
+        
+        <div class="buttons-container">
+            <button class="choice-button" onclick="makeChoice(1)" id="btn-1">1</button>
+            <button class="choice-button" onclick="makeChoice(0)" id="btn-0">0</button>
+        </div>
+        
+        <div class="status" id="status">Waiting for your choice...</div>
+    </div>
+    
+    <div class="thank-you" id="thankYou">
+        <h2>Data recorded</h2>
+        <p>Thank you for helping Paul Lia</p>
+        <p style="margin-top: 10px; font-size: 14px; color: #888;">
+            Your choice has been added to the collective memory
+        </p>
+    </div>
+    
+    <div class="data-counter" id="dataCounter">
+        Responses: <span id="responseCount">0</span>
+    </div>
+
+    <script>
+        let responseCount = parseInt(localStorage.getItem('paulLiaResponses') || '0');
+        document.getElementById('responseCount').textContent = responseCount;
+        
+        async function makeChoice(choice) {
+            // Désactiver les boutons temporairement
+            const buttons = document.querySelectorAll('.choice-button');
+            buttons.forEach(btn => btn.style.pointerEvents = 'none');
+            
+            const status = document.getElementById('status');
+            status.textContent = 'Recording your choice...';
+            
+            // Obtenir la géolocalisation (si autorisée)
+            let location = { latitude: null, longitude: null };
+            try {
+                if (navigator.geolocation) {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            timeout: 5000,
+                            enableHighAccuracy: false
+                        });
+                    });
+                    location.latitude = position.coords.latitude;
+                    location.longitude = position.coords.longitude;
+                }
+            } catch (error) {
+                console.log('Géolocalisation non disponible ou refusée');
+            }
+            
+            // Préparer les données
+            const data = {
+                choice: choice,
+                timestamp: new Date().toISOString(),
+                latitude: location.latitude,
+                longitude: location.longitude,
+                userAgent: navigator.userAgent,
+                sessionId: getSessionId()
+            };
+            
+            try {
+                // TODO: Remplacer par ton endpoint Google Sheets
+                // await sendToGoogleSheets(data);
+                
+                // Simulation pour le développement
+                console.log('Données enregistrées:', data);
+                
+                // Incrémenter le compteur
+                responseCount++;
+                localStorage.setItem('paulLiaResponses', responseCount.toString());
+                document.getElementById('responseCount').textContent = responseCount;
+                
+                // Afficher le message de remerciement
+                showThankYou();
+                
+                status.textContent = 'Choice recorded successfully';
+                
+                // Réactiver après 3 secondes
+                setTimeout(() => {
+                    buttons.forEach(btn => btn.style.pointerEvents = 'auto');
+                    status.textContent = 'Waiting for your choice...';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'enregistrement:', error);
+                status.textContent = 'Error recording choice. Please try again.';
+                
+                // Réactiver en cas d'erreur
+                setTimeout(() => {
+                    buttons.forEach(btn => btn.style.pointerEvents = 'auto');
+                    status.textContent = 'Waiting for your choice...';
+                }, 2000);
+            }
+        }
+        
+        function showThankYou() {
+            const thankYou = document.getElementById('thankYou');
+            thankYou.classList.add('show');
+            
+            setTimeout(() => {
+                thankYou.classList.remove('show');
+            }, 2000);
+        }
+        
+        function getSessionId() {
+            let sessionId = localStorage.getItem('paulLiaSessionId');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('paulLiaSessionId', sessionId);
+            }
+            return sessionId;
+        }
+        
+        // Fonction pour envoyer vers Google Sheets (à implémenter)
+        async function sendToGoogleSheets(data) {
+            // Cette fonction sera implémentée une fois que tu auras configuré
+            // ton Google Apps Script ou ton API endpoint
+            
+            const response = await fetch('TON_ENDPOINT_GOOGLE_SHEETS', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur réseau');
+            }
+            
+            return response.json();
+        }
+        
+        // Prévenir la sélection de texte et les clics droits pour l'installation
+        document.addEventListener('selectstart', e => e.preventDefault());
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Auto-refresh toutes les heures pour les installations longues
+        setTimeout(() => {
+            location.reload();
+        }, 3600000); // 1 heure
+    </script>
+</body>
+</html>
